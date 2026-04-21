@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Spekta-змейка | неоновая классика</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 30% 40%, #0b0e1a, #020408);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Orbitron', 'Rajdhani', system-ui, monospace;
+            padding: 1.2rem;
+            position: relative;
+        }
+
+        /* динамический фон с мерцанием */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 70% 20%, rgba(0, 255, 200, 0.08), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* главный стеклянный контейнер */
+        .game-vortex {
+            max-width: 860px;
+            width: 100%;
+            background: rgba(6, 12, 24, 0.55);
+            backdrop-filter: blur(16px);
+            border-radius: 3.5rem;
+            padding: 1.8rem 2rem 2rem;
+            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 255, 255, 0.25), 0 0 28px rgba(0, 210, 255, 0.3);
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        /* шапка с переливающимся названием */
+        .spekta-header {
+            text-align: center;
+            margin-bottom: 1.6rem;
+            position: relative;
+        }
+
+        .glitch-title {
+            font-size: 3.4rem;
+            font-weight: 800;
+            font-family: 'Orbitron', 'Rajdhani', monospace;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #D9FFFC, #3effe6, #bd8aff, #ff66cc);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradientShift 4s ease infinite, textGlow 2s alternate infinite;
+            text-shadow: 0 0 5px cyan;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%;}
+            50% { background-position: 100% 50%;}
+            100% { background-position: 0% 50%;}
+        }
+
+        @keyframes textGlow {
+            0% { text-shadow: 0 0 2px cyan, 0 0 4px #0ff; }
+            100% { text-shadow: 0 0 12px #0ff, 0 0 20px #f0f; }
+        }
+
+        .sub-brand {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            color: #7bc5d0;
+            font-weight: 400;
+            text-transform: uppercase;
+            background: rgba(0, 30, 40, 0.5);
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(0, 255, 200, 0.3);
+        }
+
+        /* панель счета и кнопок - улучшенная */
+        .cyber-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            background: rgba(1, 10, 18, 0.7);
+            padding: 0.7rem 1.8rem;
+            border-radius: 60px;
+            margin-bottom: 1.8rem;
+            border: 1px solid rgba(0, 230, 250, 0.5);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        .score-glow, .best-glow {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: #010a12;
+            padding: 0.3rem 1.4rem;
+            border-radius: 3rem;
+            color: #00f7ff;
+            box-shadow: inset 0 0 6px #00b7ff40, 0 4px 10px black;
+            letter-spacing: 1px;
+        }
+
+        .score-glow span, .best-glow span {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #bbf0ff;
+            margin-right: 0.6rem;
+        }
+
+        .restart-neon {
+            background: linear-gradient(115deg, #10212e, #03121f);
+            border: none;
+            color: #0ff;
+            font-weight: bold;
+            font-family: 'Orbitron', monospace;
+            padding: 0.5rem 1.8rem;
+            border-radius: 3rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+            letter-spacing: 1.5px;
+            box-shadow: 0 0 5px cyan;
+            border: 1px solid cyan;
+        }
+
+        .restart-neon:hover {
+            background: #0ff22a20;
+            box-shadow: 0 0 18px cyan;
+            transform: scale(0.97);
+            color: #b4ffff;
+            border-color: #0ff;
+        }
+
+        /* канвас с неоновым свечением */
+        .canvas-area {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.2rem;
+            position: relative;
+        }
+
+        canvas {
+            background-color: #02080f;
+            border-radius: 2rem;
+            box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.3), 0 25px 35px -10px black, inset 0 0 30px rgba(0,255,200,0.1);
+            width: 100%;
+            height: auto;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        /* контроллеры — futuristic d-pad */
+        .dpad {
+            display: flex;
+            justify-content: center;
+            gap: 1.3rem;
+            margin: 1.2rem 0 0.7rem;
+            flex-wrap: wrap;
+        }
+
+        .dpad-btn {
+            background: rgba(8, 20, 32, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid #2effe0;
+            color: #baf7ff;
+            font-size: 1.9rem;
+            font-weight: bold;
+            padding: 0.6rem 1.6rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: 0.07s linear;
+            font-family: monospace;
+            box-shadow: 0 5px 0 #021018;
+            width: 70px;
+            text-align: center;
+        }
+
+        .dpad-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #021018;
+            background: #0ff22a20;
+            color: white;
+            text-shadow: 0 0 5px cyan;
+        }
+
+        .info-bar {
+            text-align: center;
+            font-size: 0.8rem;
+            background: rgba(0, 20, 30, 0.6);
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-radius: 2rem;
+            color: #7ec8e0;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: #0f212e;
+            padding: 0.2rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            color: #8efff0;
+        }
+
+        @media (max-width: 550px) {
+            .game-vortex {
+                padding: 1rem;
+            }
+            .glitch-title {
+                font-size: 2.2rem;
+                letter-spacing: 2px;
+            }
+            .dpad-btn {
+                font-size: 1.4rem;
+                padding: 0.4rem 0rem;
+                width: 55px;
+            }
+            .score-glow, .best-glow {
+                font-size: 1.1rem;
+                padding: 0.2rem 1rem;
+            }
+            .cyber-panel {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-vortex">
+    <div class="spekta-header">
+        <div class="glitch-title">SPEKTA-ЗМЕЙКА</div>
+        <div class="sub-brand">✦ neural snake // retro wave ✦</div>
+    </div>
+
+    <div class="cyber-panel">
+        <div class="score-glow"><span>🍒 СЧЁТ</span> <span id="scoreValue">0</span></div>
+        <div class="best-glow"><span>🏆 РЕКОРД</span> <span id="bestValue">0</span></div>
+        <button class="restart-neon" id="restartButton">⟳ РЕСТАРТ</button>
+    </div>
+
+    <div class="canvas-area">
+        <canvas id="snakeCanvas" width="600" height="600" style="width:100%; height:auto; max-width:600px; aspect-ratio:1/1"></canvas>
+    </div>
+
+    <div class="dpad">
+        <button class="dpad-btn" data-dir="UP">▲</button>
+        <button class="dpad-btn" data-dir="LEFT">◀</button>
+        <button class="dpad-btn" data-dir="DOWN">▼</button>
+        <button class="dpad-btn" data-dir="RIGHT">▶</button>
+    </div>
+    <div class="info-bar">
+        <span>⬆️ ⬇️ ⬅️ ➡️</span>
+        <span class="badge">⚡ кнопки / свайпы</span>
+        <span class="badge">🎮 Spekta-edition</span>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- НАСТРОЙКИ ИГРЫ ----------
+        const canvas = document.getElementById('snakeCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const GRID_SIZE = 20;       // 20x20
+        const CELL_SIZE = canvas.width / GRID_SIZE;
+        
+        // состояние игры
+        let snake = [
+            {x: 10, y: 10},
+            {x: 9, y: 10},
+            {x: 8, y: 10}
+        ];
+        let food = {x: 15, y: 10};
+        let direction = 'RIGHT';
+        let nextDirection = 'RIGHT';
+        let score = 0;
+        let bestScore = 0;
+        let gameRunning = true;
+        let gameInterval = null;
+        const BASE_SPEED = 110;  // мс
+        
+        // загружаем рекорд
+        try {
+            const savedBest = localStorage.getItem('spekta_snake_best');
+            if(savedBest && !isNaN(parseInt(savedBest))) {
+                bestScore = parseInt(savedBest);
+                document.getElementById('bestValue').innerText = bestScore;
+            }
+        } catch(e) {}
+        
+        // ---- вспомогательные функции ----
+        function updateScoreUI() {
+            document.getElementById('scoreValue').innerText = score;
+            if(score > bestScore) {
+                bestScore = score;
+                document.getElementById('bestValue').innerText = bestScore;
+                localStorage.setItem('spekta_snake_best', bestScore);
+            }
+        }
+        
+        // генерация еды на свободной клетке
+        function generateRandomFood() {
+            const totalCells = GRID_SIZE * GRID_SIZE;
+            if(snake.length >= totalCells) {
+                gameRunning = false;
+                if(gameInterval) clearInterval(gameInterval);
+                drawGame(true);
+                setTimeout(() => {
+                    alert("✨ ПОБЕДА! ✨ Вы заполнили всю сетку! Легендарный счёт!");
+                }, 20);
+                return false;
+            }
+            const freeSpots = [];
+            for(let i=0; i<GRID_SIZE; i++) {
+                for(let j=0; j<GRID_SIZE; j++) {
+                    let occupied = snake.some(seg => seg.x === i && seg.y === j);
+                    if(!occupied) freeSpots.push({x: i, y: j});
+                }
+            }
+            if(freeSpots.length === 0) {
+                gameRunning = false;
+                if(gameInterval) clearInterval(gameInterval);
+                drawGame(true);
+                alert("Идеальная игра! Вы — чемпион!");
+                return false;
+            }
+            const randIndex = Math.floor(Math.random() * freeSpots.length);
+            food = freeSpots[randIndex];
+            return true;
+        }
+        
+        // игровой шаг
+        function gameTick() {
+            if(!gameRunning) return;
+            
+            let newDir = nextDirection;
+            // анти-разворот
+            if((newDir === 'RIGHT' && direction === 'LEFT') ||
+               (newDir === 'LEFT' && direction === 'RIGHT') ||
+               (newDir === 'UP' && direction === 'DOWN') ||
+               (newDir === 'DOWN' && direction === 'UP')) {
+                newDir = direction;
+            }
+            direction = newDir;
+            
+            const head = snake[0];
+            let newHead = {...head};
+            switch(direction) {
+                case 'RIGHT': newHead.x += 1; break;
+                case 'LEFT': newHead.x -= 1; break;
+                case 'UP': newHead.y -= 1; break;
+                case 'DOWN': newHead.y += 1; break;
+                default: break;
+            }
+            
+            const willEat = (newHead.x === food.x && newHead.y === food.y);
+            
+            if(willEat) {
+                snake.unshift(newHead);
+                score++;
+                updateScoreUI();
+                const success = generateRandomFood();
+                if(!success || !gameRunning) {
+                    drawGame(true);
+                    return;
+                }
+            } else {
+                snake.unshift(newHead);
+                snake.pop();
+            }
+            
+            // проверка коллизий
+            const currentHead = snake[0];
+            // стены
+            if(currentHead.x < 0 || currentHead.x >= GRID_SIZE || currentHead.y < 0 || currentHead.y >= GRID_SIZE) {
+                gameOver();
+                return;
+            }
+            // самосъедание
+            for(let i=1; i<snake.length; i++) {
+                if(snake[i].x === currentHead.x && snake[i].y === currentHead.y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            drawGame(false);
+        }
+        
+        function gameOver() {
+            if(!gameRunning) return;
+            gameRunning = false;
+            if(gameInterval) clearInterval(gameInterval);
+            drawGame(true);
+            setTimeout(() => {
+                alert("💀 GAME OVER 💀\nНажмите «РЕСТАРТ», чтобы продолжить.");
+            }, 30);
+        }
+        
+        // ********** УЛЬТРА-КРАСИВАЯ ОТРИСОВКА **********
+        function drawGame(isGameOverFlag = false) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // глубокий тёмный фон с градиентом
+            const gradBack = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradBack.addColorStop(0, '#021018');
+            gradBack.addColorStop(1, '#030b14');
+            ctx.fillStyle = gradBack;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // рисование светящейся сетки
+            ctx.strokeStyle = '#1d4f5e';
+            ctx.lineWidth = 0.7;
+            for(let i = 0; i <= GRID_SIZE; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * CELL_SIZE, 0);
+                ctx.lineTo(i * CELL_SIZE, canvas.height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * CELL_SIZE);
+                ctx.lineTo(canvas.width, i * CELL_SIZE);
+                ctx.stroke();
+            }
+            
+            // рисуем еду: светящаяся ягода с анимацией пульса (статически, но с сиянием)
+            const fx = food.x * CELL_SIZE;
+            const fy = food.y * CELL_SIZE;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#ff4d6d';
+            ctx.fillStyle = '#ff3860';
+            ctx.beginPath();
+            ctx.arc(fx + CELL_SIZE/2, fy + CELL_SIZE/2, CELL_SIZE * 0.38, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#ffaa66';
+            ctx.beginPath();
+            ctx.arc(fx + CELL_SIZE/2 - 3, fy + CELL_SIZE/2 - 3, 4, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(fx + CELL_SIZE/2 - 5, fy + CELL_SIZE/2 - 6, 2, 0, Math.PI*2);
+            ctx.fill();
+            // блеск
+            ctx.fillStyle = '#ffee99';
+            ctx.font = `${CELL_SIZE * 0.5}px "Segoe UI"`;
+            ctx.fillText("✦", fx + CELL_SIZE*0.7, fy + CELL_SIZE*0.3);
+            ctx.shadowBlur = 0;
+            
+            // рисуем змейку с градиентными чешуйками + неоновый контур
+            for(let i=0; i<snake.length; i++) {
+                const seg = snake[i];
+                const x = seg.x * CELL_SIZE;
+                const y = seg.y * CELL_SIZE;
+                const gradient = ctx.createLinearGradient(x, y, x+CELL_SIZE, y+CELL_SIZE);
+                if(i === 0) {
+                    gradient.addColorStop(0, '#2effd0');
+                    gradient.addColorStop(1, '#10b890');
+                } else {
+                    gradient.addColorStop(0, '#18b580');
+                    gradient.addColorStop(1, '#0a6e4f');
+                }
+                ctx.fillStyle = gradient;
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = '#00ffe0';
+                ctx.fillRect(x+1, y+1, CELL_SIZE-2, CELL_SIZE-2);
+                // внутренний узор
+                ctx.fillStyle = '#b3ffec';
+                ctx.fillRect(x+5, y+5, CELL_SIZE-10, CELL_SIZE-10);
+                // глаза для головы
+                if(i === 0) {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(x + CELL_SIZE*0.7, y + CELL_SIZE*0.3, 4.5, 0, Math.PI*2);
+                    ctx.arc(x + CELL_SIZE*0.3, y + CELL_SIZE*0.3, 4.5, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.fillStyle = "#000000";
+                    ctx.beginPath();
+                    ctx.arc(x + CELL_SIZE*0.73, y + CELL_SIZE*0.27, 2.2, 0, Math.PI*2);
+                    ctx.arc(x + CELL_SIZE*0.33, y + CELL_SIZE*0.27, 2.2, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.fillStyle = "#ffffee";
+                    ctx.beginPath();
+                    ctx.arc(x + CELL_SIZE*0.8, y + CELL_SIZE*0.2, 1.2, 0, Math.PI*2);
+                    ctx.arc(x + CELL_SIZE*0.4, y + CELL_SIZE*0.2, 1.2, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+            ctx.shadowBlur = 0;
+            
+            // добавим декоративные линии (кибер эффект)
+            ctx.beginPath();
+            ctx.strokeStyle = '#2effd0';
+            ctx.lineWidth = 1;
+            for(let i=0; i<3; i++) {
+                ctx.moveTo(20, canvas.height-15 + i*4);
+                ctx.lineTo(50, canvas.height-15 + i*4);
+                ctx.stroke();
+            }
+            
+            // надпись на поле
+            ctx.font = "bold 12px 'Orbitron'";
+            ctx.fillStyle = "#29d0d0";
+            ctx.fillText("SPEKTA", canvas.width-70, canvas.height-10);
+            
+            if(isGameOverFlag || !gameRunning) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.82)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.font = "800 32px 'Orbitron'";
+                ctx.fillStyle = "#ff66cc";
+                ctx.shadowBlur = 0;
+                ctx.fillText("GAME OVER", canvas.width/2-115, canvas.height/2-35);
+                ctx.font = "16px monospace";
+                ctx.fillStyle = "#0ff";
+                ctx.fillText("нажми «РЕСТАРТ»", canvas.width/2-85, canvas.height/2+25);
+                ctx.fillStyle = "#b0f0ff";
+                ctx.font = "12px monospace";
+                ctx.fillText("Spekta-змейка // бесконечный голод", canvas.width/2-130, canvas.height-25);
+            }
+        }
+        
+        // сброс игры
+        function resetGame() {
+            if(gameInterval) clearInterval(gameInterval);
+            // сброс значений
+            snake = [
+                {x: 10, y: 10},
+                {x: 9, y: 10},
+                {x: 8, y: 10}
+            ];
+            direction = 'RIGHT';
+            nextDirection = 'RIGHT';
+            score = 0;
+            gameRunning = true;
+            updateScoreUI();
+            // гарантия, что еда не на змейке
+            let foodPlaced = false;
+            for(let i=0; i<500; i++) {
+                const randX = Math.floor(Math.random() * GRID_SIZE);
+                const randY = Math.floor(Math.random() * GRID_SIZE);
+                if(!snake.some(seg => seg.x === randX && seg.y === randY)) {
+                    food = {x: randX, y: randY};
+                    foodPlaced = true;
+                    break;
+                }
+            }
+            if(!foodPlaced) food = {x: 5, y: 5};
+            drawGame(false);
+            gameInterval = setInterval(() => gameTick(), BASE_SPEED);
+        }
+        
+        // управление направлениями
+        function setDirection(newDir) {
+            if(!gameRunning) return;
+            if((newDir === 'RIGHT' && direction === 'LEFT') ||
+               (newDir === 'LEFT' && direction === 'RIGHT') ||
+               (newDir === 'UP' && direction === 'DOWN') ||
+               (newDir === 'DOWN' && direction === 'UP')) {
+                return;
+            }
+            nextDirection = newDir;
+        }
+        
+        // клавиатура
+        function onKeyDown(e) {
+            const key = e.key;
+            if(key === 'ArrowUp') { e.preventDefault(); setDirection('UP'); }
+            else if(key === 'ArrowDown') { e.preventDefault(); setDirection('DOWN'); }
+            else if(key === 'ArrowLeft') { e.preventDefault(); setDirection('LEFT'); }
+            else if(key === 'ArrowRight') { e.preventDefault(); setDirection('RIGHT'); }
+            if(key === ' ' || key === 'Space' || key === 'r' || key === 'R') {
+                e.preventDefault();
+                resetGame();
+            }
+        }
+        
+        // тач-свайпы
+        let touchStartPos = null;
+        function onTouchStart(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            touchStartPos = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+        }
+        function onTouchMove(e) {
+            if(!touchStartPos) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const dx = (touch.clientX - rect.left) - touchStartPos.x;
+            const dy = (touch.clientY - rect.top) - touchStartPos.y;
+            if(Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+            if(Math.abs(dx) > Math.abs(dy)) {
+                if(dx > 0) setDirection('RIGHT');
+                else setDirection('LEFT');
+            } else {
+                if(dy > 0) setDirection('DOWN');
+                else setDirection('UP');
+            }
+            touchStartPos = null;
+        }
+        function onTouchEnd(e) { touchStartPos = null; }
+        
+        // кнопки dpad
+        function bindDPad() {
+            const btns = document.querySelectorAll('.dpad-btn');
+            btns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const dir = btn.getAttribute('data-dir');
+                    if(dir === 'UP') setDirection('UP');
+                    else if(dir === 'DOWN') setDirection('DOWN');
+                    else if(dir === 'LEFT') setDirection('LEFT');
+                    else if(dir === 'RIGHT') setDirection('RIGHT');
+                    if(navigator.vibrate) navigator.vibrate(15);
+                });
+            });
+        }
+        
+        function initEventListeners() {
+            window.addEventListener('keydown', onKeyDown);
+            canvas.addEventListener('touchstart', onTouchStart, {passive: false});
+            canvas.addEventListener('touchmove', onTouchMove, {passive: false});
+            canvas.addEventListener('touchend', onTouchEnd);
+            document.getElementById('restartButton').addEventListener('click', () => resetGame());
+            bindDPad();
+            // блокировка скролла стрелками
+            window.addEventListener('keydown', function(e) {
+                if(e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    if(e.target === document.body || e.target === document.documentElement) e.preventDefault();
+                }
+            });
+        }
+        
+        // запуск
+        function start() {
+            initEventListeners();
+            resetGame(); // первая инициализация и отрисовка
+        }
+        
+        start();
+    })();
+</script>
+</body>
+</html>
